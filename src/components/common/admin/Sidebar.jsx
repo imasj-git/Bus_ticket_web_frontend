@@ -115,7 +115,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                   Add New Bus
                 </a>
                 <a
-                  href="/admin/ViewBuses"
+                  href="/admin/viewbuses"
                   className="cursor-pointer hover:text-gray-300 block"
                 >
                   View Buses

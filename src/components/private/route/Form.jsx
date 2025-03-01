@@ -1,41 +1,55 @@
 import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
-const AddRoute = ({ onAdd }) => {
+// API function to add a route
+const addRoute = async (routeData) => {
+  const { data } = await axios.post("http://localhost:3000/api/v1/route", routeData, {
+    headers: { "Content-Type": "application/json" }
+  });
+  return data;
+};
+
+const AddRoute = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    start: "",
-    end: "",
+    routeName: "",
+    startPoint: "",
+    endPoint: "",
     distance: "",
   });
 
-  const handleInputChange = (e) => {
+  // Mutation Hook for Adding a Route
+  const mutation = useMutation({
+    mutationFn: addRoute,
+    onSuccess: (data) => {
+      alert("Route added successfully!");
+      console.log("Route Created:", data);
+      setFormData({
+        routeName: "",
+        startPoint: "",
+        endPoint: "",
+        distance: "",
+      });
+    },
+    onError: (error) => {
+      console.error("API Error:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to add route.");
+    },
+  });
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Validate input
-    if (!formData.name || !formData.start || !formData.end || !formData.distance) {
-      alert("Please fill in all fields.");
-      return;
-    }
-
-    // Call the onAdd function passed as a prop (optional, for adding to a parent state)
-    if (onAdd) {
-      onAdd(formData);
-    }
-
-    // Reset form after submission
-    setFormData({
-      name: "",
-      start: "",
-      end: "",
-      distance: "",
+    mutation.mutate({
+      routeName: formData.routeName,
+      startPoint: formData.startPoint,
+      endPoint: formData.endPoint,
+      distance: Number(formData.distance), // Ensure it's a number
     });
-
-    alert("Route added successfully!");
   };
 
   return (
@@ -44,69 +58,78 @@ const AddRoute = ({ onAdd }) => {
         <h1 className="text-2xl font-bold mb-6 text-center">Add New Route</h1>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2" htmlFor="name">
-              Route Name
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Route Name</label>
             <input
               type="text"
-              id="name"
-              name="name"
+              name="routeName"
               className="w-full px-4 py-2 border rounded-lg"
               placeholder="Enter route name"
-              value={formData.name}
-              onChange={handleInputChange}
+              value={formData.routeName}
+              onChange={handleChange}
+              required
             />
           </div>
+
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2" htmlFor="start">
-              Start Point
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Start Point</label>
             <input
               type="text"
-              id="start"
-              name="start"
+              name="startPoint"
               className="w-full px-4 py-2 border rounded-lg"
               placeholder="Enter start point"
-              value={formData.start}
-              onChange={handleInputChange}
+              value={formData.startPoint}
+              onChange={handleChange}
+              required
             />
           </div>
+
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2" htmlFor="end">
-              End Point
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">End Point</label>
             <input
               type="text"
-              id="end"
-              name="end"
+              name="endPoint"
               className="w-full px-4 py-2 border rounded-lg"
               placeholder="Enter end point"
-              value={formData.end}
-              onChange={handleInputChange}
+              value={formData.endPoint}
+              onChange={handleChange}
+              required
             />
           </div>
+
           <div className="mb-4">
-            <label className="block text-gray-700 font-bold mb-2" htmlFor="distance">
-              Distance
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Distance</label>
             <input
-              type="text"
-              id="distance"
+              type="number"
               name="distance"
               className="w-full px-4 py-2 border rounded-lg"
-              placeholder="Enter distance (e.g., 100 km)"
+              placeholder="Enter distance (in km)"
               value={formData.distance}
-              onChange={handleInputChange}
+              onChange={handleChange}
+              required
             />
           </div>
+
           <div className="flex justify-end">
             <button
               type="submit"
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              disabled={mutation.isLoading}
             >
-              Add Route
+              {mutation.isLoading ? "Adding Route..." : "Add Route"}
             </button>
           </div>
+
+          {/* Error Message */}
+          {mutation.isError && (
+            <p className="text-red-500 text-sm mt-2">
+              {mutation.error.message || "Something went wrong"}
+            </p>
+          )}
+
+          {/* Success Message */}
+          {mutation.isSuccess && (
+            <p className="text-green-500 text-sm mt-2">Route added successfully!</p>
+          )}
         </form>
       </div>
     </div>

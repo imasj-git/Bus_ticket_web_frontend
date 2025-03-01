@@ -2,9 +2,6 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Bell } from "lucide-react";
 
-// Import images
-import logo from "../../assets/images/logo.png";
-import avatar from "../../assets/images/avtar.jpg";
 
 const Navbar = () => {
     return (
@@ -14,7 +11,7 @@ const Navbar = () => {
                 {/* Logo Container */}
                 <div className="w-10 h-10 bg-purple-600 rounded-full overflow-hidden flex items-center justify-center">
                     <img
-                        src={logo} // Use the imported logo
+                        src={"/src/assets/images/logo.png"} // Use the imported logo
                         alt="Logo"
                         className="w-full h-full object-cover" // Ensures the image fits the container
                     />
@@ -49,7 +46,7 @@ const Navbar = () => {
                 {/* User Info */}
                 <div className="flex items-center space-x-2">
                     <img
-                        src={avatar} // Use the imported avatar
+                        src={"/src/assets/images/avtar.jpg"} // Use the imported avatar
                         alt="User Avatar"
                         className="w-8 h-8 rounded-full"
                     />
