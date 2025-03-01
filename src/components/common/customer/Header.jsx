@@ -23,7 +23,7 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between text-base">
         {/* Left Section - Social Media Links */}
         <div className="flex items-center space-x-4" style={{ marginLeft: "30px" }}>
-          <a href="#" className="hover:opacity-80">
+          <a href="https://www.facebook.com/profile.php?id=100012521027764" className="hover:opacity-80">
             <FaFacebook />
           </a>
           <a href="#" className="hover:opacity-80">
@@ -59,15 +59,12 @@ const Header = () => {
         </div>
 
         {/* Right Section - Navigation Links */}
-        <div className="flex items-center space-x-4" style={{ marginRight: "30px" }}>
+        <div className="flex items-center space-x-4" style={{ marginRight: "5px" }}>
           <a href="#" className="flex items-center space-x-1 hover:opacity-80">
             <FaTicketAlt />
             <span>Manage Tickets</span>
           </a>
-          <a href="#" className="flex items-center space-x-1 hover:opacity-80">
-            <FaUser />
-            <span>Be an Agent</span>
-          </a>
+          
 
           {/* Light/Dark Theme Toggle */}
           <button
