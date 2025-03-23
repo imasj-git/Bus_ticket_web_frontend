@@ -1,16 +1,24 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom"; // ✅ Get selected booking details
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import KhaltiCheckout from "khalti-checkout-web"; // ✅ Import Khalti
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Header from "../../components/common/customer/Header";
 import Navbar from "../../components/common/customer/Navbar";
 import Footer from "../../components/common/customer/Footer";
 
-const API_BASE_URL = "http://localhost:3000/api/v1";
+const API_BASE_URL = "http://localhost:3000/api/v1"; // ✅ Backend API URL
 
 const Checkout = () => {
     const location = useLocation();
-    const { boardingPoint, selectedSeats, totalFare, busId } = location.state || {}; // ✅ Get data from Seat Selection
+    const navigate = useNavigate(); // ✅ Navigation for success redirect
 
+    // ✅ Extract booking details from state
+    const { boardingPoint, selectedSeats, totalFare, busId } = location.state || {};
+
+    // ✅ Component state
     const [busDetails, setBusDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -32,7 +40,7 @@ const Checkout = () => {
                     setBusDetails(response.data.data);
                     setLoading(false);
                 })
-                .catch(error => {
+                .catch(() => {
                     setError("Failed to fetch bus details.");
                     setLoading(false);
                 });
@@ -44,10 +52,52 @@ const Checkout = () => {
         setUserDetails({ ...userDetails, [e.target.name]: e.target.value });
     };
 
-    // ✅ Handle form submission
-    const handleConfirmBooking = () => {
+    // ✅ Handle payment method change
+    const handlePaymentChange = (method) => {
+        setPaymentMethod(method);
+    };
+
+    // ✅ Khalti Configuration
+    const khaltiConfig = {
+        publicKey: "test_public_key_617c4c6fe77c441d88451ec1408a0c0e",
+        productIdentity: busId,
+        productName: "Bus Ticket",
+        productUrl: "http://localhost:3000",
+        eventHandler: {
+            async onSuccess(payload) {
+                console.log("Khalti Payment Successful:", payload);
+
+                // ✅ Verify payment with backend
+                try {
+                    const verifyResponse = await axios.post(`${API_BASE_URL}/khalti/verify`, {
+                        token: payload.token,
+                        amount: totalFare * 100, // Khalti expects amount in paisa
+                    });
+
+                    if (verifyResponse.data.success) {
+                        toast.success("Payment verified successfully!");
+
+                        // ✅ Submit booking to backend
+                        await submitBooking("Khalti");
+                    } else {
+                        toast.error("Payment verification failed!");
+                    }
+                } catch (error) {
+                    console.error("Payment Verification Error:", error);
+                    toast.error("Error verifying payment. Please try again.");
+                }
+            },
+            onError(error) {
+                console.error("Khalti Payment Error:", error);
+                toast.error("Khalti Payment Failed!");
+            },
+        },
+    };
+
+    // ✅ Handle booking API call
+    const submitBooking = async (paymentMode) => {
         if (!userDetails.name || !userDetails.phone || !userDetails.email || !userDetails.address) {
-            alert("Please fill in all details before confirming.");
+            toast.error("Please fill in all details before confirming.");
             return;
         }
 
@@ -57,12 +107,35 @@ const Checkout = () => {
             selectedSeats,
             totalFare,
             userDetails,
-            paymentMethod,
+            paymentMethod: paymentMode, // ✅ Store chosen payment method
         };
 
-        console.log("Booking Data:", bookingData); // ✅ Replace this with an API call to save the booking
+        try {
+            const response = await axios.post(`${API_BASE_URL}/bookings`, bookingData);
 
-        alert("Booking Confirmed!");
+            if (response.data.success) {
+                toast.success("Booking Confirmed!");
+
+                setTimeout(() => {
+                    navigate("/booking-success"); // ✅ Redirect after success
+                }, 3000);
+            } else {
+                toast.error("Booking failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Booking Error:", error);
+            toast.error("Failed to confirm booking. Please try again later.");
+        }
+    };
+
+    // ✅ Handle order submission
+    const handleConfirmBooking = () => {
+        if (paymentMethod === "Khalti") {
+            const khalti = new KhaltiCheckout(khaltiConfig);
+            khalti.show({ amount: totalFare * 100 });
+        } else {
+            submitBooking("Cash");
+        }
     };
 
     return (
@@ -88,59 +161,14 @@ const Checkout = () => {
                             </div>
                         </section>
 
-                        {/* ✅ Display Selected Details */}
-                        <section className="mt-6">
-                            <h3 className="text-lg font-semibold text-purple-700">Booking Details</h3>
-                            <p><strong>Boarding Point:</strong> {boardingPoint || "Not Selected"}</p>
-                            <p><strong>Selected Seats:</strong> {selectedSeats?.join(", ") || "None"}</p>
-                            <p><strong>Total Fare:</strong> Rs. {totalFare || "0"}</p>
-                        </section>
-
-                        {/* ✅ User Details Section */}
-                        <section className="mt-6">
-                            <h3 className="text-lg font-semibold text-purple-700">Your Details</h3>
-                            <input
-                                type="text"
-                                name="name"
-                                value={userDetails.name}
-                                onChange={handleInputChange}
-                                placeholder="Full Name"
-                                className="w-full border p-2 rounded mt-2"
-                            />
-                            <input
-                                type="text"
-                                name="phone"
-                                value={userDetails.phone}
-                                onChange={handleInputChange}
-                                placeholder="Mobile Number"
-                                className="w-full border p-2 rounded mt-2"
-                            />
-                            <input
-                                type="email"
-                                name="email"
-                                value={userDetails.email}
-                                onChange={handleInputChange}
-                                placeholder="Email Address"
-                                className="w-full border p-2 rounded mt-2"
-                            />
-                            <input
-                                type="text"
-                                name="address"
-                                value={userDetails.address}
-                                onChange={handleInputChange}
-                                placeholder="Address"
-                                className="w-full border p-2 rounded mt-2"
-                            />
-                        </section>
-
                         {/* ✅ Payment Method Section */}
                         <section className="mt-6">
                             <h3 className="text-lg font-semibold text-purple-700">Payment Method</h3>
                             <div className="flex gap-4 mt-2">
-                                {["Khalti", "Esewa", "Cash"].map((method) => (
+                                {["Khalti", "Cash"].map((method) => (
                                     <button
                                         key={method}
-                                        onClick={() => setPaymentMethod(method)}
+                                        onClick={() => handlePaymentChange(method)}
                                         className={`border px-4 py-2 rounded ${
                                             paymentMethod === method ? "bg-purple-500 text-white" : "bg-gray-200"
                                         }`}
@@ -151,37 +179,21 @@ const Checkout = () => {
                             </div>
                         </section>
 
-                        {/* ✅ Travel and Payment Details Section */}
-                        <section className="mt-6 flex gap-4">
-                            <div className="w-1/2 bg-purple-100 p-4 rounded-md">
-                                <h3 className="text-lg font-semibold text-purple-700">Travel Details</h3>
-                                <p>Route: {busDetails?.route.startPoint} - {busDetails?.route.endPoint}</p>
-                                <p>Date: {new Date(busDetails?.date).toLocaleDateString()}</p>
-                                <p>Seats: {selectedSeats?.length} ({selectedSeats?.join(", ")})</p>
-                                <p>Bus Type: {busDetails?.busType}</p>
-                            </div>
-
-                            <div className="w-1/2 bg-purple-100 p-4 rounded-md">
-                                <h3 className="text-lg font-semibold text-purple-700">Payment Details</h3>
-                                <p>Total Cost: NPR {totalFare}</p>
-                                <p>Cashback: NPR {Math.floor(totalFare * 0.1)}</p>
-                                <p className="font-bold">To Pay Amount: NPR {totalFare - Math.floor(totalFare * 0.1)}</p>
-                            </div>
-                        </section>
-
                         {/* ✅ Action Buttons */}
                         <section className="mt-6 flex gap-4">
                             <button onClick={handleConfirmBooking} className="bg-purple-600 text-white py-2 px-6 rounded">
-                                Confirm Booking
+                                {paymentMethod === "Khalti" ? "Pay with Khalti" : "Confirm Booking"}
                             </button>
-                            <button className="bg-gray-600 text-white py-2 px-6 rounded">
+                            <button className="bg-gray-600 text-white py-2 px-6 rounded" onClick={() => navigate(-1)}>
                                 Go Back
                             </button>
                         </section>
                     </>
                 )}
             </div>
+
             <Footer />
+            <ToastContainer />
         </>
     );
 };

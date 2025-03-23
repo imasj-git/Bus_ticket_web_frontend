@@ -159,15 +159,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         </div>
 
 
-        {/* Logout */}
-        <div className="flex items-center space-x-3 cursor-pointer hover:text-gray-300 p-2">
-          <FaSignOutAlt className="text-lg" />
-          {!isCollapsed && (
-            <a href="/logout" className="hover:text-gray-300">
-              <span>Logout</span>
-            </a>
-          )}
-        </div>
+        <div
+  className="flex items-center space-x-3 cursor-pointer hover:text-gray-300 p-2"
+  onClick={() => {
+    localStorage.removeItem("role");
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  }}
+>
+  <FaSignOutAlt className="text-lg" />
+  {!isCollapsed && <span>Logout</span>}
+</div>
       </div>
     </div>
   );

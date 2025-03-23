@@ -22,6 +22,7 @@ const Layout = lazy(() => import("./components/private"));
 const ViewBuses = lazy(() => import("./components/private/bus"));
 const FAQ = lazy(() => import("./components/public/FAQ"));
 const SearchResults = lazy(() => import("./components/public/SearchResults"));
+const Confirm = lazy(() => import("./components/public/SearchResults"));
 
 // Get user role from localStorage
 const getUserRole = () => {
